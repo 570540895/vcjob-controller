@@ -1,63 +1,38 @@
 package v1alpha1
 
 import (
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+        corev1 "k8s.io/api/core/v1"
+        metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-type Job struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   JobSpec   `json:"spec"`
-	Status JobStatus `json:"status"`
-}
-
+// JobSpec defines the desired state of Job
 type JobSpec struct {
-	MaxRetry
-	MinAvailable
-	MinSuccess
-
-	Resource corev1.ResourceList `json:"resource"`
+        // INSERT ADDITIONAL SPEC FIELDS -- desired state of cluster
 }
 
-type VirtualMachinePhase string
-
-const (
-	VirtualMachineNone        VirtualMachinePhase = ""
-	VirtualMachineCreating    VirtualMachinePhase = "Creating"
-	VirtualMachineActive      VirtualMachinePhase = "Active"
-	VirtualMachineFailed      VirtualMachinePhase = "Failed"
-	VirtualMachineTerminating VirtualMachinePhase = "Terminating"
-	VirtualMachineUnknown     VirtualMachinePhase = "Unknown"
-)
-
-type ResourceUsage struct {
-	CPU    float64 `json:"cpu"`
-	Memory float64 `json:"memory"`
-}
-
-type ServerStatus struct {
-	ID    string        `json:"id"`
-	State string        `json:"state"`
-	Usage ResourceUsage `json:"usage"`
-}
-
+// JobStatus defines the observed state of Job.
+// It should always be reconstructable from the state of the cluster and/or outside world.
 type JobStatus struct {
-	Phase          VirtualMachinePhase `json:"phase"`
-	Reason         string              `json:"reason,omitempty"`
-	Server         ServerStatus        `json:"server,omitempty"`
-	LastUpdateTime metav1.Time         `json:"lastUpdateTime"`
+        // INSERT ADDITIONAL STATUS FIELDS -- observed state of cluster
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-type JobList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata"`
+// Job is the Schema for the jobs API
+// +k8s:openapi-gen=true
+type Job struct {
+        metav1.TypeMeta   `json:",inline"`
+        metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Items []Job `json:"items"`
+        Spec   JobSpec   `json:"spec,omitempty"`
+        Status JobStatus `json:"status,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// JobList contains a list of Job
+type JobList struct {
+        metav1.TypeMeta `json:",inline"`
+        metav1.ListMeta `json:"metadata,omitempty"`
+        Items           []Job `json:"items"`
 }
