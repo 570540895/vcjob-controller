@@ -17,6 +17,6 @@ kube::codegen::gen_helpers \
 
 kube::codegen::gen_client \
     --with-watch \
-    --output-dir "${SCRIPT_ROOT}/pkg/client" \
-    --output-pkg "${THIS_PKG}/pkg/client" \
+    --output-dir "${SCRIPT_ROOT}/pkg/generated" \
+    --output-pkg "${THIS_PKG}/pkg/generated" \
     "${SCRIPT_ROOT}/pkg/apis"
