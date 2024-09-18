@@ -17,6 +17,10 @@ type Job struct {
 }
 
 type JobSpec struct {
+	MaxRetry
+	MinAvailable
+	MinSuccess
+
 	Resource corev1.ResourceList `json:"resource"`
 }
 
@@ -55,5 +59,5 @@ type JobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []Job `json:"items"` 
+	Items []Job `json:"items"`
 }
