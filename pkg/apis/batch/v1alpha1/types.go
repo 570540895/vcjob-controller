@@ -7,7 +7,8 @@ import (
 
 // JobSpec defines the desired state of Job
 type JobSpec struct {
-        // INSERT ADDITIONAL SPEC FIELDS -- desired state of cluster
+	// INSERT ADDITIONAL SPEC FIELDS -- desired state of cluster
+
 }
 
 // JobStatus defines the observed state of Job.
