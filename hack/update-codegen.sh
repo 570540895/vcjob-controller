@@ -12,25 +12,12 @@ set -o pipefail
 #                  k8s.io/kubernetes. The output-base is needed for the generators to output into the vendor dir
 #                  instead of the $GOPATH directly. For normal projects this can be dropped.
 
-
-$GOPATH/pkg/mod/k8s.io/code-generator@v0.19.2/generate-groups.sh "deepcopy,client,informer,lister" github.com/570540895/vcjob-controller/pkg/client github.com/570540895/vcjob-controller/pkg/apis "batch:v1alpha1" --go-header-file $GOPATH/github.com/570540895/vcjob-controller/hack/boilerplate.go.txt --output-base $GOPATH
-
-
-
-
-
-
-
-
-
-
-
 $GOPATH/pkg/mod/k8s.io/code-generator@v0.19.2/generate-groups.sh "all" \
-  vcjob-controller/pkg/generated \
-  vcjob-controller/pkg/apis \
+  github.com/570540895/vcjob-controller/pkg/client \
+  github.com/570540895/vcjob-controller/pkg/apis \
   "batch:v1alpha1" \
-  --go-header-file $(pwd)/boilerplate.go.txt \
-  --output-base $(pwd)/../../
+  --go-header-file $GOPATH/github.com/570540895/vcjob-controller/hack/boilerplate.go.txt \
+  --output-base $GOPATH
 
 # To use your own boilerplate text append:
 #   --go-header-file "${SCRIPT_ROOT}"/hack/custom-boilerplate.go.txt
