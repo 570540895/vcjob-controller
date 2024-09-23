@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	batchv1alpha1 "github.com/570540895/vcjob-controller/pkg/apis/batch/v1alpha1"
 	clientset "github.com/570540895/vcjob-controller/pkg/client/clientset/versioned"
 	vcjobscheme "github.com/570540895/vcjob-controller/pkg/client/clientset/versioned/scheme"
 	informers "github.com/570540895/vcjob-controller/pkg/client/informers/externalversions/batch/v1alpha1"
@@ -236,7 +235,7 @@ func (c *Controller) processNextWorkItem(ctx context.Context) bool {
 // converge the two. It then updates the Status block of the Job resource
 // with the current status of the resource.
 func (c *Controller) syncHandler(ctx context.Context, objectRef cache.ObjectName) error {
-	logger := klog.LoggerWithValues(klog.FromContext(ctx), "objectRef", objectRef)
+	//logger := klog.LoggerWithValues(klog.FromContext(ctx), "objectRef", objectRef)
 
 	// Get the Job resource with this namespace/name
 	job, err := c.jobsLister.Jobs(objectRef.Namespace).Get(objectRef.Name)
@@ -251,63 +250,71 @@ func (c *Controller) syncHandler(ctx context.Context, objectRef cache.ObjectName
 		return err
 	}
 
-	deploymentName := job.Spec.DeploymentName
-	if deploymentName == "" {
-		// We choose to absorb the error here as the worker would requeue the
-		// resource otherwise. Instead, the next time the resource is updated
-		// the resource will be queued again.
-		utilruntime.HandleErrorWithContext(ctx, nil, "Deployment name missing from object reference", "objectReference", objectRef)
-		return nil
-	}
+	/*
+		deploymentName := job.Spec.DeploymentName
+		if deploymentName == "" {
+			// We choose to absorb the error here as the worker would requeue the
+			// resource otherwise. Instead, the next time the resource is updated
+			// the resource will be queued again.
+			utilruntime.HandleErrorWithContext(ctx, nil, "Deployment name missing from object reference", "objectReference", objectRef)
+			return nil
+		}
 
-	// Get the deployment with the name specified in Job.spec
-	deployment, err := c.deploymentsLister.Deployments(job.Namespace).Get(deploymentName)
-	// If the resource doesn't exist, we'll create it
-	if errors.IsNotFound(err) {
-		deployment, err = c.kubeclientset.AppsV1().Deployments(job.Namespace).Create(context.TODO(), newDeployment(job), metav1.CreateOptions{FieldManager: FieldManager})
-	}
+		// Get the deployment with the name specified in Job.spec
+		deployment, err := c.deploymentsLister.Deployments(job.Namespace).Get(deploymentName)
+		// If the resource doesn't exist, we'll create it
+		if errors.IsNotFound(err) {
+			deployment, err = c.kubeclientset.AppsV1().Deployments(job.Namespace).Create(context.TODO(), newDeployment(job), metav1.CreateOptions{FieldManager: FieldManager})
+		}
 
-	// If an error occurs during Get/Create, we'll requeue the item so we can
-	// attempt processing again later. This could have been caused by a
-	// temporary network failure, or any other transient reason.
-	if err != nil {
-		return err
-	}
+		// If an error occurs during Get/Create, we'll requeue the item so we can
+		// attempt processing again later. This could have been caused by a
+		// temporary network failure, or any other transient reason.
+		if err != nil {
+			return err
+		}
 
-	// If the Deployment is not controlled by this Job resource, we should log
-	// a warning to the event recorder and return error msg.
-	if !metav1.IsControlledBy(deployment, job) {
-		msg := fmt.Sprintf(MessageResourceExists, deployment.Name)
-		c.recorder.Event(job, corev1.EventTypeWarning, ErrResourceExists, msg)
-		return fmt.Errorf("%s", msg)
-	}
+		// If the Deployment is not controlled by this Job resource, we should log
+		// a warning to the event recorder and return error msg.
+		if !metav1.IsControlledBy(deployment, job) {
+			msg := fmt.Sprintf(MessageResourceExists, deployment.Name)
+			c.recorder.Event(job, corev1.EventTypeWarning, ErrResourceExists, msg)
+			return fmt.Errorf("%s", msg)
+		}
 
-	// If this number of the replicas on the Job resource is specified, and the
-	// number does not equal the current desired replicas on the Deployment, we
-	// should update the Deployment resource.
-	if job.Spec.Replicas != nil && *job.Spec.Replicas != *deployment.Spec.Replicas {
-		logger.V(4).Info("Update deployment resource", "currentReplicas", *job.Spec.Replicas, "desiredReplicas", *deployment.Spec.Replicas)
-		deployment, err = c.kubeclientset.AppsV1().Deployments(job.Namespace).Update(context.TODO(), newDeployment(job), metav1.UpdateOptions{FieldManager: FieldManager})
-	}
+	*/
 
-	// If an error occurs during Update, we'll requeue the item so we can
-	// attempt processing again later. This could have been caused by a
-	// temporary network failure, or any other transient reason.
-	if err != nil {
-		return err
-	}
+	// no need
+	/*
+		// If this number of the replicas on the Job resource is specified, and the
+		// number does not equal the current desired replicas on the Deployment, we
+		// should update the Deployment resource.
+		if job.Spec.Replicas != nil && *job.Spec.Replicas != *deployment.Spec.Replicas {
+			logger.V(4).Info("Update deployment resource", "currentReplicas", *job.Spec.Replicas, "desiredReplicas", *deployment.Spec.Replicas)
+			deployment, err = c.kubeclientset.AppsV1().Deployments(job.Namespace).Update(context.TODO(), newDeployment(job), metav1.UpdateOptions{FieldManager: FieldManager})
+		}
 
-	// Finally, we update the status block of the Job resource to reflect the
-	// current state of the world
-	err = c.updateJobStatus(job, deployment)
-	if err != nil {
-		return err
-	}
+		// If an error occurs during Update, we'll requeue the item so we can
+		// attempt processing again later. This could have been caused by a
+		// temporary network failure, or any other transient reason.
+		if err != nil {
+			return err
+		}
+
+		// Finally, we update the status block of the Job resource to reflect the
+		// current state of the world
+		err = c.updateJobStatus(job, deployment)
+		if err != nil {
+			return err
+		}
+	*/
 
 	c.recorder.Event(job, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	return nil
 }
 
+// no need
+/*
 func (c *Controller) updateJobStatus(job *batchv1alpha1.Job, deployment *appsv1.Deployment) error {
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
@@ -321,6 +328,7 @@ func (c *Controller) updateJobStatus(job *batchv1alpha1.Job, deployment *appsv1.
 	_, err := c.vcjobclientset.BatchV1alpha1().Jobs(job.Namespace).UpdateStatus(context.TODO(), jobCopy, metav1.UpdateOptions{FieldManager: FieldManager})
 	return err
 }
+*/
 
 // enqueueJob takes a Job resource and converts it into a namespace/name
 // string which is then put onto the work queue. This method should *not* be
@@ -379,6 +387,7 @@ func (c *Controller) handleObject(obj interface{}) {
 	}
 }
 
+/*
 // newDeployment creates a new Deployment for a Job resource. It also sets
 // the appropriate OwnerReferences on the resource so handleObject can discover
 // the Job resource that 'owns' it.
@@ -416,3 +425,5 @@ func newDeployment(job *batchv1alpha1.Job) *appsv1.Deployment {
 		},
 	}
 }
+
+*/
