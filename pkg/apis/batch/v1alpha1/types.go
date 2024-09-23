@@ -33,6 +33,7 @@ type JobStatus struct {
 	Version         int32  `json:"version"`
 }
 
+// +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Job is the Schema for the jobs API
