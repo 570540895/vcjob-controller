@@ -5,7 +5,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	batch "vcjob-controller/pkg/apis/batch"
+	batch "github.com/570540895/vcjob-controller/pkg/apis/batch"
 )
 
 var SchemeGroupVersion = schema.GroupVersion{Group: batch.GroupName, Version: "v1alpha1"}
