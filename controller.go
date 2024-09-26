@@ -254,8 +254,12 @@ func (c *Controller) syncHandler(ctx context.Context, objectRef cache.ObjectName
 	}
 
 	// print job information
-
-	logger.Info("Job Info", "job", job)
+	metaData := job.ObjectMeta
+	//status := job.Status
+	if metaData.DeletionTimestamp != nil {
+		logger.Info("Job has DeletionTimestamp field", "job", job)
+	}
+	//logger.Info("Job Info", "job", job)
 
 	/*
 		deploymentName := job.Spec.DeploymentName
