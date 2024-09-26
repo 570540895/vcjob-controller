@@ -13,11 +13,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	appsinformers "k8s.io/client-go/informers/apps/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	appslisters "k8s.io/client-go/listers/apps/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
@@ -67,10 +65,10 @@ type Controller struct {
 	// vcjobclientset is a clientset for our own API group
 	vcjobclientset clientset.Interface
 
-	deploymentsLister appslisters.DeploymentLister
-	deploymentsSynced cache.InformerSynced
-	jobsLister        listers.JobLister
-	jobsSynced        cache.InformerSynced
+	//deploymentsLister appslisters.DeploymentLister
+	//deploymentsSynced cache.InformerSynced
+	jobsLister listers.JobLister
+	jobsSynced cache.InformerSynced
 
 	// workqueue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
@@ -88,7 +86,7 @@ func NewController(
 	ctx context.Context,
 	kubeclientset kubernetes.Interface,
 	vcjobclientset clientset.Interface,
-	deploymentInformer appsinformers.DeploymentInformer,
+//deploymentInformer appsinformers.DeploymentInformer,
 	jobInformer informers.JobInformer) *Controller {
 	logger := klog.FromContext(ctx)
 
@@ -108,14 +106,14 @@ func NewController(
 	)
 
 	controller := &Controller{
-		kubeclientset:     kubeclientset,
-		vcjobclientset:    vcjobclientset,
-		deploymentsLister: deploymentInformer.Lister(),
-		deploymentsSynced: deploymentInformer.Informer().HasSynced,
-		jobsLister:        jobInformer.Lister(),
-		jobsSynced:        jobInformer.Informer().HasSynced,
-		workqueue:         workqueue.NewTypedRateLimitingQueue(ratelimiter),
-		recorder:          recorder,
+		kubeclientset:  kubeclientset,
+		vcjobclientset: vcjobclientset,
+		//deploymentsLister: deploymentInformer.Lister(),
+		//deploymentsSynced: deploymentInformer.Informer().HasSynced,
+		jobsLister: jobInformer.Lister(),
+		jobsSynced: jobInformer.Informer().HasSynced,
+		workqueue:  workqueue.NewTypedRateLimitingQueue(ratelimiter),
+		recorder:   recorder,
 	}
 
 	logger.Info("Setting up event handlers")
@@ -169,7 +167,7 @@ func (c *Controller) Run(ctx context.Context, workers int) error {
 	// Wait for the caches to be synced before starting workers
 	logger.Info("Waiting for informer caches to sync")
 
-	if ok := cache.WaitForCacheSync(ctx.Done(), c.deploymentsSynced, c.jobsSynced); !ok {
+	if ok := cache.WaitForCacheSync(ctx.Done(), c.jobsSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
@@ -241,7 +239,6 @@ func (c *Controller) syncHandler(ctx context.Context, objectRef cache.ObjectName
 	//logger := klog.LoggerWithValues(klog.FromContext(ctx), "objectRef", objectRef)
 
 	logger := klog.FromContext(ctx)
-	logger.Info("syncHandler Info")
 
 	// Get the Job resource with this namespace/name
 	job, err := c.jobsLister.Jobs(objectRef.Namespace).Get(objectRef.Name)
@@ -259,7 +256,6 @@ func (c *Controller) syncHandler(ctx context.Context, objectRef cache.ObjectName
 	// print job information
 
 	logger.Info("Job Info", "job", job)
-	//fmt.Println(job)
 
 	/*
 		deploymentName := job.Spec.DeploymentName
