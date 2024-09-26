@@ -90,7 +90,7 @@ func NewController(
 	ctx context.Context,
 	kubeclientset kubernetes.Interface,
 	vcjobclientset clientset.Interface,
-//deploymentInformer appsinformers.DeploymentInformer,
+	//deploymentInformer appsinformers.DeploymentInformer,
 	jobInformer informers.JobInformer) *Controller {
 	logger := klog.FromContext(ctx)
 
@@ -260,7 +260,7 @@ func (c *Controller) syncHandler(ctx context.Context, objectRef cache.ObjectName
 	// print job information
 	metaData := job.ObjectMeta
 	if metaData.DeletionTimestamp != nil {
-		logger.Info("test", "createDate", utils.UTCTransLocal(metaData.CreationTimestamp.Format("2006-01-02 15:04:05")))
+		logger.Info("test", "createDate", utils.UTCTransLocal(metaData.CreationTimestamp.Format("2006-01-02T15:04:05Z")))
 		/*
 			status := job.Status
 			csv := &utils.Csv{
