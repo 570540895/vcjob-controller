@@ -250,6 +250,10 @@ func (c *Controller) syncHandler(ctx context.Context, objectRef cache.ObjectName
 		return err
 	}
 
+	// print job information
+
+	fmt.Println(job)
+
 	/*
 		deploymentName := job.Spec.DeploymentName
 		if deploymentName == "" {
