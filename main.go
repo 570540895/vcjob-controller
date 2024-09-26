@@ -55,7 +55,7 @@ func main() {
 	exampleInformerFactory := informers.NewSharedInformerFactory(exampleClient, time.Second*30)
 
 	controller := NewController(ctx, kubeClient, exampleClient,
-		kubeInformerFactory.Apps().V1().Deployments(),
+		//kubeInformerFactory.Apps().V1().Deployments(),
 		exampleInformerFactory.Batch().V1alpha1().Jobs())
 
 	// notice that there is no need to run Start methods in a separate goroutine. (i.e. go kubeInformerFactory.Start(ctx.done())

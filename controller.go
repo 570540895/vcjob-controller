@@ -86,7 +86,7 @@ func NewController(
 	ctx context.Context,
 	kubeclientset kubernetes.Interface,
 	vcjobclientset clientset.Interface,
-//deploymentInformer appsinformers.DeploymentInformer,
+	//deploymentInformer appsinformers.DeploymentInformer,
 	jobInformer informers.JobInformer) *Controller {
 	logger := klog.FromContext(ctx)
 
