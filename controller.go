@@ -237,7 +237,9 @@ func (c *Controller) processNextWorkItem(ctx context.Context) bool {
 func (c *Controller) syncHandler(ctx context.Context, objectRef cache.ObjectName) error {
 	//logger := klog.LoggerWithValues(klog.FromContext(ctx), "objectRef", objectRef)
 
-	fmt.Println("syncHandler start.")
+	logger := klog.FromContext(ctx)
+	logger.Info("syncHandler Info")
+
 	// Get the Job resource with this namespace/name
 	job, err := c.jobsLister.Jobs(objectRef.Namespace).Get(objectRef.Name)
 	if err != nil {
@@ -253,7 +255,8 @@ func (c *Controller) syncHandler(ctx context.Context, objectRef cache.ObjectName
 
 	// print job information
 
-	fmt.Println(job)
+	logger.Info("Job Info", "job", job)
+	//fmt.Println(job)
 
 	/*
 		deploymentName := job.Spec.DeploymentName
