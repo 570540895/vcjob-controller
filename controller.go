@@ -7,7 +7,6 @@ import (
 	vcjobscheme "github.com/570540895/vcjob-controller/pkg/client/clientset/versioned/scheme"
 	informers "github.com/570540895/vcjob-controller/pkg/client/informers/externalversions/batch/v1alpha1"
 	listers "github.com/570540895/vcjob-controller/pkg/client/listers/batch/v1alpha1"
-	"github.com/570540895/vcjob-controller/utils"
 	"golang.org/x/time/rate"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -260,7 +259,7 @@ func (c *Controller) syncHandler(ctx context.Context, objectRef cache.ObjectName
 	// print job information
 	metaData := job.ObjectMeta
 	if metaData.DeletionTimestamp != nil {
-		logger.Info("test", "createDate", utils.UTCTransLocal(metaData.CreationTimestamp.Format("2006-01-02T15:04:05Z")))
+		logger.Info("test", "createDate", metaData.CreationTimestamp.Unix())
 		/*
 			status := job.Status
 			csv := &utils.Csv{
