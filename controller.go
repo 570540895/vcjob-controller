@@ -7,6 +7,7 @@ import (
 	vcjobscheme "github.com/570540895/vcjob-controller/pkg/client/clientset/versioned/scheme"
 	informers "github.com/570540895/vcjob-controller/pkg/client/informers/externalversions/batch/v1alpha1"
 	listers "github.com/570540895/vcjob-controller/pkg/client/listers/batch/v1alpha1"
+	"github.com/570540895/vcjob-controller/utils"
 	"golang.org/x/time/rate"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -39,7 +40,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const controllerAgentName = "vcjob-controller"
+const (
+	controllerAgentName = "vcjob-controller"
+	csvPath             = "/csvfiles/result.csv"
+)
 
 const (
 	// SuccessSynced is used as part of the Event 'reason' when a Job is synced
@@ -86,7 +90,7 @@ func NewController(
 	ctx context.Context,
 	kubeclientset kubernetes.Interface,
 	vcjobclientset clientset.Interface,
-	//deploymentInformer appsinformers.DeploymentInformer,
+//deploymentInformer appsinformers.DeploymentInformer,
 	jobInformer informers.JobInformer) *Controller {
 	logger := klog.FromContext(ctx)
 
@@ -255,10 +259,24 @@ func (c *Controller) syncHandler(ctx context.Context, objectRef cache.ObjectName
 
 	// print job information
 	metaData := job.ObjectMeta
-	//status := job.Status
 	if metaData.DeletionTimestamp != nil {
-		logger.Info("Job has DeletionTimestamp field", "job", job)
+		logger.Info("test", "createDate", utils.UTCTransLocal(metaData.CreationTimestamp.Format("2006-01-02 15:04:05")))
+		/*
+			status := job.Status
+			csv := &utils.Csv{
+				Uid: string(metaData.UID),
+				CreateDate:
+			}
+			csvFile, err := os.Open(csvPath)
+			if err != nil {
+				panic(err)
+			}
+
+		*/
+
+		//logger.Info("Job has DeletionTimestamp field", "job", job)
 	}
+
 	//logger.Info("Job Info", "job", job)
 
 	/*
