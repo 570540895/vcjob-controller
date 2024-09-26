@@ -8,7 +8,6 @@ import (
 	informers "github.com/570540895/vcjob-controller/pkg/client/informers/externalversions/batch/v1alpha1"
 	listers "github.com/570540895/vcjob-controller/pkg/client/listers/batch/v1alpha1"
 	"golang.org/x/time/rate"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -122,31 +121,35 @@ func NewController(
 	logger.Info("Setting up event handlers")
 	// Set up an event handler for when Job resources change
 	jobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: controller.enqueueJob,
+		//AddFunc: controller.enqueueJob,
 		UpdateFunc: func(old, new interface{}) {
 			controller.enqueueJob(new)
 		},
 	})
-	// Set up an event handler for when Deployment resources change. This
-	// handler will lookup the owner of the given Deployment, and if it is
-	// owned by a Job resource then the handler will enqueue that Job resource for
-	// processing. This way, we don't need to implement custom logic for
-	// handling Deployment resources. More info on this pattern:
-	// https://github.com/kubernetes/community/blob/8cafef897a22026d42f5e5bb3f104febe7e29830/contributors/devel/controllers.md
-	deploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: controller.handleObject,
-		UpdateFunc: func(old, new interface{}) {
-			newDepl := new.(*appsv1.Deployment)
-			oldDepl := old.(*appsv1.Deployment)
-			if newDepl.ResourceVersion == oldDepl.ResourceVersion {
-				// Periodic resync will send update events for all known Deployments.
-				// Two different versions of the same Deployment will always have different RVs.
-				return
-			}
-			controller.handleObject(new)
-		},
-		DeleteFunc: controller.handleObject,
-	})
+
+	/*
+		// Set up an event handler for when Deployment resources change. This
+		// handler will lookup the owner of the given Deployment, and if it is
+		// owned by a Job resource then the handler will enqueue that Job resource for
+		// processing. This way, we don't need to implement custom logic for
+		// handling Deployment resources. More info on this pattern:
+		// https://github.com/kubernetes/community/blob/8cafef897a22026d42f5e5bb3f104febe7e29830/contributors/devel/controllers.md
+		deploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+			AddFunc: controller.handleObject,
+			UpdateFunc: func(old, new interface{}) {
+				newDepl := new.(*appsv1.Deployment)
+				oldDepl := old.(*appsv1.Deployment)
+				if newDepl.ResourceVersion == oldDepl.ResourceVersion {
+					// Periodic resync will send update events for all known Deployments.
+					// Two different versions of the same Deployment will always have different RVs.
+					return
+				}
+				controller.handleObject(new)
+			},
+			DeleteFunc: controller.handleObject,
+		})
+
+	*/
 
 	return controller
 }

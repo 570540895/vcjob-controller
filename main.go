@@ -21,6 +21,10 @@ var (
 	kubeconfig string
 )
 
+const (
+	workers = 1
+)
+
 func main() {
 	klog.InitFlags(nil)
 	flag.Parse()
@@ -59,7 +63,7 @@ func main() {
 	kubeInformerFactory.Start(ctx.Done())
 	exampleInformerFactory.Start(ctx.Done())
 
-	if err = controller.Run(ctx, 2); err != nil {
+	if err = controller.Run(ctx, workers); err != nil {
 		logger.Error(err, "Error running controller")
 		klog.FlushAndExit(klog.ExitFlushTimeout, 1)
 	}
