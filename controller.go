@@ -46,7 +46,7 @@ limitations under the License.
 
 const (
 	controllerAgentName = "vcjob-controller"
-	csvPath             = "/csvfiles/result.csv"
+	csvPath             = "./csvfiles/result.csv"
 )
 
 const (
