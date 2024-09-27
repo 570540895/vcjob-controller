@@ -264,8 +264,8 @@ func (c *Controller) syncHandler(ctx context.Context, objectRef cache.ObjectName
 			EndTime:    strconv.FormatInt(metaData.DeletionTimestamp.Unix()+8*60*60, 10),
 			CpuNum:     cpuNum,
 			Mem:        mem,
-			GpuNum:     string(rune(gpuNum)),
-			WorkerNum:  string(rune(workerNum)),
+			GpuNum:     strconv.Itoa(gpuNum),
+			WorkerNum:  strconv.Itoa(workerNum),
 		}
 		csvFile, err := os.OpenFile(csvPath, os.O_RDWR, 0666)
 		if err != nil {
