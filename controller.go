@@ -231,13 +231,13 @@ func (c *Controller) syncHandler(ctx context.Context, objectRef cache.ObjectName
 		return err
 	}
 
-	// print job information
+	// save job information
 	metaData := job.ObjectMeta
 	if metaData.DeletionTimestamp != nil {
 		if err := utils.CreateCsv(csvPath); err != nil {
 			panic(err)
 		}
-		//logger.Info("test", "createDate", metaData.CreationTimestamp.Unix())
+
 		cfgStr := metaData.Annotations["kubectl.kubernetes.io/last-applied-configuration"]
 		cfgJson, _ := simplejson.NewJson([]byte(cfgStr))
 		workerNum, _ := cfgJson.Get("spec").Get("minAvailable").Int()
@@ -267,7 +267,7 @@ func (c *Controller) syncHandler(ctx context.Context, objectRef cache.ObjectName
 			GpuNum:     string(rune(gpuNum)),
 			WorkerNum:  string(rune(workerNum)),
 		}
-		csvFile, err := os.Open(csvPath)
+		csvFile, err := os.OpenFile(csvPath, os.O_RDWR, 0666)
 		if err != nil {
 			panic(err)
 		}
