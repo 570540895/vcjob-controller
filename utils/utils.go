@@ -25,8 +25,8 @@ func CreateCsv(path string) error {
 		}
 	}(file)
 	writer := csv.NewWriter(file)
-	defer writer.Flush()
 	err = writer.Write([]string{"uid", "createDate", "startTime", "endTime", "cpu_num", "mem", "gpu_num", "worker_num"})
+	writer.Flush()
 	if err != nil {
 		return err
 	}

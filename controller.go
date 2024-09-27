@@ -267,7 +267,7 @@ func (c *Controller) syncHandler(ctx context.Context, objectRef cache.ObjectName
 			GpuNum:     strconv.Itoa(gpuNum),
 			WorkerNum:  strconv.Itoa(workerNum),
 		}
-		csvFile, err := os.OpenFile(csvPath, os.O_RDWR, 0666)
+		csvFile, err := os.OpenFile(csvPath, os.O_APPEND|os.O_RDWR, 0666)
 		if err != nil {
 			panic(err)
 		}
