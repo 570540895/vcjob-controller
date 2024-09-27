@@ -1,8 +1,8 @@
 package utils
 
 import (
+	"encoding/csv"
 	"os"
-	"time"
 )
 
 func IsPathExists(path string) bool {
@@ -10,9 +10,25 @@ func IsPathExists(path string) bool {
 	return err == nil || os.IsExist(err)
 }
 
-func UTCTransLocal(utcTime string) string {
-	t, _ := time.Parse("2006-01-02T15:04:05Z", utcTime)
-	loc, _ := time.LoadLocation("Asia/Shanghai")
-	bjTime := t.In(loc)
-	return bjTime.Format("2006-01-02 15:04:05")
+func CreateCsv(path string) error {
+	if IsPathExists(path) {
+		return nil
+	}
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(file)
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+	err = writer.Write([]string{"uid", "createDate", "startTime", "endTime", "cpu_num", "mem", "gpu_num", "worker_num"})
+	if err != nil {
+		return err
+	}
+	return nil
 }

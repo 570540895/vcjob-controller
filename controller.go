@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/csv"
 	"fmt"
 	clientset "github.com/570540895/vcjob-controller/pkg/client/clientset/versioned"
 	vcjobscheme "github.com/570540895/vcjob-controller/pkg/client/clientset/versioned/scheme"
 	informers "github.com/570540895/vcjob-controller/pkg/client/informers/externalversions/batch/v1alpha1"
 	listers "github.com/570540895/vcjob-controller/pkg/client/listers/batch/v1alpha1"
+	"github.com/570540895/vcjob-controller/utils"
+	"github.com/bitly/go-simplejson"
 	"golang.org/x/time/rate"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -20,6 +23,8 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -67,11 +72,8 @@ type Controller struct {
 	kubeclientset kubernetes.Interface
 	// vcjobclientset is a clientset for our own API group
 	vcjobclientset clientset.Interface
-
-	//deploymentsLister appslisters.DeploymentLister
-	//deploymentsSynced cache.InformerSynced
-	jobsLister listers.JobLister
-	jobsSynced cache.InformerSynced
+	jobsLister     listers.JobLister
+	jobsSynced     cache.InformerSynced
 
 	// workqueue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
@@ -89,7 +91,6 @@ func NewController(
 	ctx context.Context,
 	kubeclientset kubernetes.Interface,
 	vcjobclientset clientset.Interface,
-	//deploymentInformer appsinformers.DeploymentInformer,
 	jobInformer informers.JobInformer) *Controller {
 	logger := klog.FromContext(ctx)
 
@@ -111,12 +112,10 @@ func NewController(
 	controller := &Controller{
 		kubeclientset:  kubeclientset,
 		vcjobclientset: vcjobclientset,
-		//deploymentsLister: deploymentInformer.Lister(),
-		//deploymentsSynced: deploymentInformer.Informer().HasSynced,
-		jobsLister: jobInformer.Lister(),
-		jobsSynced: jobInformer.Informer().HasSynced,
-		workqueue:  workqueue.NewTypedRateLimitingQueue(ratelimiter),
-		recorder:   recorder,
+		jobsLister:     jobInformer.Lister(),
+		jobsSynced:     jobInformer.Informer().HasSynced,
+		workqueue:      workqueue.NewTypedRateLimitingQueue(ratelimiter),
+		recorder:       recorder,
 	}
 
 	logger.Info("Setting up event handlers")
@@ -127,30 +126,6 @@ func NewController(
 			controller.enqueueJob(new)
 		},
 	})
-
-	/*
-		// Set up an event handler for when Deployment resources change. This
-		// handler will lookup the owner of the given Deployment, and if it is
-		// owned by a Job resource then the handler will enqueue that Job resource for
-		// processing. This way, we don't need to implement custom logic for
-		// handling Deployment resources. More info on this pattern:
-		// https://github.com/kubernetes/community/blob/8cafef897a22026d42f5e5bb3f104febe7e29830/contributors/devel/controllers.md
-		deploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-			AddFunc: controller.handleObject,
-			UpdateFunc: func(old, new interface{}) {
-				newDepl := new.(*appsv1.Deployment)
-				oldDepl := old.(*appsv1.Deployment)
-				if newDepl.ResourceVersion == oldDepl.ResourceVersion {
-					// Periodic resync will send update events for all known Deployments.
-					// Two different versions of the same Deployment will always have different RVs.
-					return
-				}
-				controller.handleObject(new)
-			},
-			DeleteFunc: controller.handleObject,
-		})
-
-	*/
 
 	return controller
 }
@@ -259,104 +234,62 @@ func (c *Controller) syncHandler(ctx context.Context, objectRef cache.ObjectName
 	// print job information
 	metaData := job.ObjectMeta
 	if metaData.DeletionTimestamp != nil {
+		if err := utils.CreateCsv(csvPath); err != nil {
+			panic(err)
+		}
+		//logger.Info("test", "createDate", metaData.CreationTimestamp.Unix())
+		cfgStr := metaData.Annotations["kubectl.kubernetes.io/last-applied-configuration"]
+		cfgJson, _ := simplejson.NewJson([]byte(cfgStr))
+		workerNum, _ := cfgJson.Get("spec").Get("minAvailable").Int()
+
+		tasks, _ := cfgJson.Get("spec").Get("tasks").Array()
+		task1 := tasks[0]
+		js1 := simplejson.New()
+		js1.Set("task1", task1)
+		activeDeadlineSeconds, _ := js1.Get("task1").Get("template").Get("spec").Get("activeDeadlineSeconds").Int()
+		containers, _ := js1.Get("task1").Get("template").Get("spec").Get("containers").Array()
+		container1 := containers[0]
+		js2 := simplejson.New()
+		js2.Set("container1", container1)
+		limits := js2.Get("container1").Get("resources").Get("limits")
+		cpuNum, _ := limits.Get("cpu").String()
+		mem, _ := limits.Get("memory").String()
+		gpuNum, _ := limits.Get("zhejianglab.com/gpu").Int()
+
 		logger.Info("test", "createDate", metaData.CreationTimestamp.Unix())
-		/*
-			status := job.Status
-			csv := &utils.Csv{
-				Uid: string(metaData.UID),
-				CreateDate:
-			}
-			csvFile, err := os.Open(csvPath)
+		csvItem := &utils.CsvItem{
+			Uid:        string(metaData.UID),
+			CreateDate: strconv.FormatInt(metaData.CreationTimestamp.Unix()+8*60*60, 10),
+			StartTime:  strconv.FormatInt(metaData.DeletionTimestamp.Unix()+8*60*60-int64(activeDeadlineSeconds), 10),
+			EndTime:    strconv.FormatInt(metaData.DeletionTimestamp.Unix()+8*60*60, 10),
+			CpuNum:     cpuNum,
+			Mem:        mem,
+			GpuNum:     string(rune(gpuNum)),
+			WorkerNum:  string(rune(workerNum)),
+		}
+		csvFile, err := os.Open(csvPath)
+		if err != nil {
+			panic(err)
+		}
+		defer func(csvFile *os.File) {
+			err := csvFile.Close()
 			if err != nil {
 				panic(err)
 			}
-
-		*/
+		}(csvFile)
+		writer := csv.NewWriter(csvFile)
+		defer writer.Flush()
+		err = writer.Write([]string{csvItem.Uid, csvItem.CreateDate, csvItem.StartTime, csvItem.EndTime, csvItem.CpuNum, csvItem.Mem, csvItem.GpuNum, csvItem.WorkerNum})
+		if err != nil {
+			return err
+		}
 
 		//logger.Info("Job has DeletionTimestamp field", "job", job)
 	}
 
-	//logger.Info("Job Info", "job", job)
-
-	/*
-		deploymentName := job.Spec.DeploymentName
-		if deploymentName == "" {
-			// We choose to absorb the error here as the worker would requeue the
-			// resource otherwise. Instead, the next time the resource is updated
-			// the resource will be queued again.
-			utilruntime.HandleErrorWithContext(ctx, nil, "Deployment name missing from object reference", "objectReference", objectRef)
-			return nil
-		}
-
-		// Get the deployment with the name specified in Job.spec
-		deployment, err := c.deploymentsLister.Deployments(job.Namespace).Get(deploymentName)
-		// If the resource doesn't exist, we'll create it
-		if errors.IsNotFound(err) {
-			deployment, err = c.kubeclientset.AppsV1().Deployments(job.Namespace).Create(context.TODO(), newDeployment(job), metav1.CreateOptions{FieldManager: FieldManager})
-		}
-
-		// If an error occurs during Get/Create, we'll requeue the item so we can
-		// attempt processing again later. This could have been caused by a
-		// temporary network failure, or any other transient reason.
-		if err != nil {
-			return err
-		}
-
-		// If the Deployment is not controlled by this Job resource, we should log
-		// a warning to the event recorder and return error msg.
-		if !metav1.IsControlledBy(deployment, job) {
-			msg := fmt.Sprintf(MessageResourceExists, deployment.Name)
-			c.recorder.Event(job, corev1.EventTypeWarning, ErrResourceExists, msg)
-			return fmt.Errorf("%s", msg)
-		}
-
-	*/
-
-	// no need
-	/*
-		// If this number of the replicas on the Job resource is specified, and the
-		// number does not equal the current desired replicas on the Deployment, we
-		// should update the Deployment resource.
-		if job.Spec.Replicas != nil && *job.Spec.Replicas != *deployment.Spec.Replicas {
-			logger.V(4).Info("Update deployment resource", "currentReplicas", *job.Spec.Replicas, "desiredReplicas", *deployment.Spec.Replicas)
-			deployment, err = c.kubeclientset.AppsV1().Deployments(job.Namespace).Update(context.TODO(), newDeployment(job), metav1.UpdateOptions{FieldManager: FieldManager})
-		}
-
-		// If an error occurs during Update, we'll requeue the item so we can
-		// attempt processing again later. This could have been caused by a
-		// temporary network failure, or any other transient reason.
-		if err != nil {
-			return err
-		}
-
-		// Finally, we update the status block of the Job resource to reflect the
-		// current state of the world
-		err = c.updateJobStatus(job, deployment)
-		if err != nil {
-			return err
-		}
-	*/
-
 	c.recorder.Event(job, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	return nil
 }
-
-// no need
-/*
-func (c *Controller) updateJobStatus(job *batchv1alpha1.Job, deployment *appsv1.Deployment) error {
-	// NEVER modify objects from the store. It's a read-only, local cache.
-	// You can use DeepCopy() to make a deep copy of original object and modify this copy
-	// Or create a copy manually for better performance
-	jobCopy := job.DeepCopy()
-	jobCopy.Status.AvailableReplicas = deployment.Status.AvailableReplicas
-	// If the CustomResourceSubresources feature gate is not enabled,
-	// we must use Update instead of UpdateStatus to update the Status block of the Job resource.
-	// UpdateStatus will not allow changes to the Spec of the resource,
-	// which is ideal for ensuring nothing other than resource status has been updated.
-	_, err := c.vcjobclientset.BatchV1alpha1().Jobs(job.Namespace).UpdateStatus(context.TODO(), jobCopy, metav1.UpdateOptions{FieldManager: FieldManager})
-	return err
-}
-*/
 
 // enqueueJob takes a Job resource and converts it into a namespace/name
 // string which is then put onto the work queue. This method should *not* be
@@ -414,44 +347,3 @@ func (c *Controller) handleObject(obj interface{}) {
 		return
 	}
 }
-
-/*
-// newDeployment creates a new Deployment for a Job resource. It also sets
-// the appropriate OwnerReferences on the resource so handleObject can discover
-// the Job resource that 'owns' it.
-func newDeployment(job *batchv1alpha1.Job) *appsv1.Deployment {
-	labels := map[string]string{
-		"app":        "nginx",
-		"controller": job.Name,
-	}
-	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      job.Spec.DeploymentName,
-			Namespace: job.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(job, batchv1alpha1.SchemeGroupVersion.WithKind("Job")),
-			},
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: job.Spec.Replicas,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "nginx",
-							Image: "nginx:latest",
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-*/

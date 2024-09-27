@@ -1,12 +1,12 @@
 package utils
 
-type Csv struct {
+type CsvItem struct {
 	Uid        string
 	CreateDate string
 	StartTime  string
 	EndTime    string
-	CpuNum     int32
-	Mem        int32
-	GpuNum     int32
-	WorkerNum  int32
+	CpuNum     string
+	Mem        string
+	GpuNum     string
+	WorkerNum  string
 }
