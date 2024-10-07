@@ -13,7 +13,6 @@ import (
 	"golang.org/x/time/rate"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -300,50 +299,5 @@ func (c *Controller) enqueueJob(obj interface{}) {
 		return
 	} else {
 		c.workqueue.Add(objectRef)
-	}
-}
-
-// handleObject will take any resource implementing metav1.Object and attempt
-// to find the Job resource that 'owns' it. It does this by looking at the
-// objects metadata.ownerReferences field for an appropriate OwnerReference.
-// It then enqueues that Job resource to be processed. If the object does not
-// have an appropriate OwnerReference, it will simply be skipped.
-func (c *Controller) handleObject(obj interface{}) {
-	var object metav1.Object
-	var ok bool
-	logger := klog.FromContext(context.Background())
-	if object, ok = obj.(metav1.Object); !ok {
-		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
-		if !ok {
-			// If the object value is not too big and does not contain sensitive information then
-			// it may be useful to include it.
-			utilruntime.HandleErrorWithContext(context.Background(), nil, "Error decoding object, invalid type", "type", fmt.Sprintf("%T", obj))
-			return
-		}
-		object, ok = tombstone.Obj.(metav1.Object)
-		if !ok {
-			// If the object value is not too big and does not contain sensitive information then
-			// it may be useful to include it.
-			utilruntime.HandleErrorWithContext(context.Background(), nil, "Error decoding object tombstone, invalid type", "type", fmt.Sprintf("%T", tombstone.Obj))
-			return
-		}
-		logger.V(4).Info("Recovered deleted object", "resourceName", object.GetName())
-	}
-	logger.V(4).Info("Processing object", "object", klog.KObj(object))
-	if ownerRef := metav1.GetControllerOf(object); ownerRef != nil {
-		// If this object is not owned by a Job, we should not do anything more
-		// with it.
-		if ownerRef.Kind != "Job" {
-			return
-		}
-
-		job, err := c.jobsLister.Jobs(object.GetNamespace()).Get(ownerRef.Name)
-		if err != nil {
-			logger.V(4).Info("Ignore orphaned object", "object", klog.KObj(object), "job", ownerRef.Name)
-			return
-		}
-
-		c.enqueueJob(job)
-		return
 	}
 }
