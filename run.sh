@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-./vcjob-controller -kubeconfig=$HOME/.kube/config
+nohup ./vcjob-controller -kubeconfig=$HOME/.kube/config >/dev/null 2>&1 &
